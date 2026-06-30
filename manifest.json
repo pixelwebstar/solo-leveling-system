@@ -1,0 +1,18 @@
+{
+  "name": "THE SYSTEM",
+  "short_name": "System",
+  "description": "Solo Leveling Gamified Weight Loss System",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#02060f",
+  "theme_color": "#02060f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,17 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>THE SYSTEM - Solo Leveling Weight Loss</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#02060f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="app" class="mobile-container">
+  <!-- System Login / Verification Overlay -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-box glass-panel">
+      <div class="login-header">
+        <span class="system-glow-dot active"></span>
+        <h2 class="system-title">SYSTEM ACCESS</h2>
+      </div>
+      <p class="login-instruction">VERIFY HUNTER IDENTITY TO ACCESS THE SYSTEM</p>
+      
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group-vertical">
+          <label for="login-username">HUNTER USERNAME</label>
+          <input type="text" id="login-username" placeholder="Enter Username" required autocomplete="off">
+        </div>
+        <div class="form-group-vertical">
+          <label for="login-pin">SECURITY PIN</label>
+          <input type="password" id="login-pin" placeholder="Enter 6-Digit PIN" required pattern="[0-9]{6}" inputmode="numeric">
+        </div>
+        <div id="login-error" class="login-error-msg"></div>
+        <button type="submit" class="btn-primary btn-full">VERIFY IDENTITY</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="app" class="mobile-container hidden">
     <!-- Header / System Banner -->
     <header class="system-header">
       <div class="system-title-container">
-        <span class="system-glow-dot"></span>
+        <span class="system-glow-dot active"></span>
         <h1 class="system-title">THE SYSTEM</h1>
       </div>
       <div class="player-level-badge">
@@ -31,18 +59,18 @@
         <div class="status-card glass-panel">
           <div class="status-header">
             <h2 id="player-title" class="hunter-title">E-RANK HUNTER</h2>
-            <div class="status-sub">Active Player: Hunter</div>
+            <div class="status-sub">Active Player: <span class="text-glow">asheejajayan</span></div>
           </div>
           
           <div class="stat-bars">
-            <!-- HP (Weight) Bar -->
+            <!-- Monarch Awakening (Weight Loss Progress) Bar -->
             <div class="bar-container">
               <div class="bar-labels">
-                <span class="bar-name">HP (Weight)</span>
-                <span class="bar-values"><span id="stat-hp">105.0</span> / 75.0 kg</span>
+                <span class="bar-name">Monarch Awakening (Weight Loss)</span>
+                <span class="bar-values"><span id="stat-hp">105.0</span> kg &rarr; 75.0 kg</span>
               </div>
               <div class="bar-bg">
-                <div id="hp-bar-fill" class="bar-fill hp-fill" style="width: 100%;"></div>
+                <div id="hp-bar-fill" class="bar-fill hp-fill" style="width: 0%;"></div>
               </div>
             </div>
 
@@ -62,7 +90,7 @@
           <div class="currency-row">
             <div class="currency-item">
               <span class="currency-label">GOLD (Calorie Balance)</span>
-              <span id="stat-gold" class="currency-val">0</span>
+              <span id="stat-gold" class="currency-val text-glow">0</span>
             </div>
             <div class="currency-item">
               <span class="currency-label">STAT POINTS</span>
@@ -263,7 +291,7 @@
           <div id="chat-messages" class="chat-messages">
             <div class="message system">
               <div class="message-content">
-                [SYSTEM] Welcome back, Hunter. I am the System Guide. I am monitoring your vital signs, steps, and calorie debt. Speak your request.
+                [SYSTEM] Welcome back, Hunter asheejajayan. I am the System Guide. I am monitoring your vital signs, steps, and calorie debt. Speak your request.
               </div>
             </div>
           </div>

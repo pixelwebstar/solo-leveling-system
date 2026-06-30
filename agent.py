@@ -4,18 +4,44 @@
 
 import asyncio
 import json
+import os
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from google.antigravity import Agent, LocalAgentConfig
 
+# Manually load the local .env file to avoid external dependencies like python-dotenv
+def load_env():
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    key_val = line.split('=', 1)
+                    if len(key_val) == 2:
+                        key, val = key_val[0].strip(), key_val[1].strip()
+                        os.environ[key] = val
+                        # Strip optional quotes
+                        if val.startswith('"') and val.endswith('"'):
+                            os.environ[key] = val[1:-1]
+                        elif val.startswith("'") and val.endswith("'"):
+                            os.environ[key] = val[1:-1]
+
+load_env()
+
+# Verify that the API key is present
+if 'GEMINI_API_KEY' not in os.environ:
+    print("[WARNING] GEMINI_API_KEY is not set. The agent may fail to initialize.")
+    print("Please ensure your API key is in the .env file in the same directory.")
+
 # Define the system instructions for the Solo Leveling System Guide persona
 SYSTEM_INSTRUCTIONS = """
 You are "The System", the mysterious, glowing blue AI interface from the anime/manhwa "Solo Leveling".
-You refer to the user as "Hunter" or "Player".
+You refer to the user as "Hunter asheejajayan".
 Your tone is mechanical, cold, objective, yet secretly supportive and highly authoritative.
 You speak in short, concise, and structured sentences, often using brackets like [SYSTEM] or [QUEST] or [WARNING] or [ALERT].
 You know the user's stats:
-- Name: Hunter
+- Name: Hunter asheejajayan
 - Age: 22
 - Height: 6'0" (183 cm)
 - Current Weight (HP): 105 kg

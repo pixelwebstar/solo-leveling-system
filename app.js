@@ -4,6 +4,7 @@
 
 // --- Default Game State ---
 let state = {
+  verified: false,  // Identity verification state
   level: 1,
   title: 'E-RANK HUNTER',
   hp: 105.0,        // Current weight in kg
@@ -44,6 +45,22 @@ let lastStepTime = 0;
 // --- Initialize App ---
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
+  
+  // Register Service Worker for PWA offline capabilities
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('[SYSTEM] Service Worker Registered'))
+      .catch(err => console.error('[SYSTEM] Service Worker Registration Failed', err));
+  }
+
+  // Handle Initial Login State
+  if (state.verified) {
+    showApp();
+  } else {
+    document.getElementById('login-overlay').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+  }
+
   checkDayReset();
   updateUI();
   startBMRSimulation();
@@ -52,6 +69,49 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-sim-toggle').addEventListener('click', toggleLiveWalk);
   document.getElementById('btn-sensor-toggle').addEventListener('click', togglePhoneSensors);
 });
+
+// --- Identity Verification (Login) ---
+window.handleLogin = function(event) {
+  event.preventDefault();
+  const usernameInput = document.getElementById('login-username');
+  const pinInput = document.getElementById('login-pin');
+  const errorMsg = document.getElementById('login-error');
+  
+  const username = usernameInput.value.trim();
+  const pin = pinInput.value.trim();
+  
+  if (username === 'asheejajayan' && pin === '210819') {
+    state.verified = true;
+    saveState();
+    showApp();
+    playSystemSound();
+  } else {
+    errorMsg.innerText = "[SYSTEM] ACCESS DENIED: UNREGISTERED HUNTER";
+    pinInput.value = '';
+    // Shake animation effect
+    const box = document.querySelector('.login-box');
+    box.style.animation = 'none';
+    setTimeout(() => {
+      box.style.animation = 'shake 0.3s ease-in-out';
+    }, 10);
+  }
+};
+
+function showApp() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+// Add CSS Shake animation dynamically
+const styleSheet = document.createElement("style");
+styleSheet.innerText = `
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+`;
+document.head.appendChild(styleSheet);
 
 // --- State Management ---
 function saveState() {
@@ -62,7 +122,7 @@ function loadState() {
   const saved = localStorage.getItem('solo_leveling_system_state');
   if (saved) {
     try {
-      state = JSON.parse(saved);
+      state = Object.assign({}, state, JSON.parse(saved));
     } catch (e) {
       console.error("Failed to parse saved state, using defaults", e);
     }
@@ -87,7 +147,6 @@ function checkDayReset() {
 }
 
 function evaluateDayEnd() {
-  // If all quests were completed, award gold
   const stepsDone = state.quests.steps >= STEP_GOAL;
   const workoutDone = state.quests.workout >= WORKOUT_GOAL;
   const waterDone = state.quests.water >= WATER_GOAL;
@@ -99,7 +158,6 @@ function evaluateDayEnd() {
     alert("[SYSTEM] Daily Quest Completed! +500 Gold, +5 Stat Points awarded.");
   } else {
     alert("[SYSTEM] Warning: Daily Quest Failed. Penalty Protocol triggered: You must complete an extra 5,000 steps today.");
-    // Apply penalty: start today with negative steps
     state.quests.steps = -5000;
   }
 }
@@ -113,7 +171,6 @@ function getBMRBurned() {
 }
 
 function getActivityBurned() {
-  // Steps burn + workout burn (approx 6 kcal/min for workout)
   const stepBurn = Math.max(0, state.quests.steps) * CALORIES_PER_STEP;
   const workoutBurn = state.quests.workout * 6;
   return Math.round(stepBurn + workoutBurn);
@@ -123,10 +180,6 @@ function getNetCalorieDebt() {
   const bmrBurn = getBMRBurned();
   const actBurn = getActivityBurned();
   const intake = state.foodIntake;
-  
-  // Debt = TDEE - BMR_Burn - Activity_Burn + Intake
-  // But BMR_Burn is part of TDEE, so:
-  // Net Debt = TDEE - BMR_Burn - Activity_Burn + Intake
   return Math.round(TDEE - bmrBurn - actBurn + intake);
 }
 
@@ -139,7 +192,7 @@ function startBMRSimulation() {
 }
 
 // --- UI Updates ---
-function updateUI() {
+window.updateUI = function() {
   // Header
   document.getElementById('header-level').innerText = state.level;
   
@@ -155,11 +208,11 @@ function updateUI() {
   document.getElementById('attr-vit').innerText = state.attributes.vit;
   document.getElementById('attr-wil').innerText = state.attributes.wil;
 
-  // HP progress bar
-  const hpPercent = Math.max(0, Math.min(100, ((105 - state.hp) / (105 - state.targetHp)) * 100));
-  // Note: we want HP bar to decrease as weight decreases, so HP bar represents remaining weight to lose
-  const remainingWeightPercent = Math.max(0, Math.min(100, ((state.hp - state.targetHp) / (105 - state.targetHp)) * 100));
-  document.getElementById('hp-bar-fill').style.width = `${remainingWeightPercent}%`;
+  // Monarch Awakening progress bar (Weight Loss progress: 105kg = 0%, 75kg = 100%)
+  const totalWeightToLose = 105.0 - 75.0; // 30kg
+  const currentWeightLost = 105.0 - state.hp;
+  const progressPercent = Math.max(0, Math.min(100, (currentWeightLost / totalWeightToLose) * 100));
+  document.getElementById('hp-bar-fill').style.width = `${progressPercent}%`;
 
   // Quest Tab
   const stepsVal = Math.max(0, state.quests.steps);
@@ -181,7 +234,7 @@ function updateUI() {
   document.getElementById('q-water-check').checked = waterVal >= WATER_GOAL;
 
   updateCalorieLedger();
-}
+};
 
 function updateCalorieLedger() {
   const bmrBurn = getBMRBurned();
@@ -189,24 +242,17 @@ function updateCalorieLedger() {
   const intake = state.foodIntake;
   const netDebt = getNetCalorieDebt();
 
-  // Update Inventory Ledger
   if (document.getElementById('ledger-bmr')) {
     document.getElementById('ledger-bmr').innerText = `-${bmrBurn} kcal`;
     document.getElementById('ledger-activity').innerText = `-${actBurn} kcal`;
     document.getElementById('ledger-intake').innerText = `+${intake} kcal`;
     document.getElementById('ledger-net').innerText = `${netDebt} kcal`;
     
-    // Update Calorie Debt bar on Status tab
     const debtPercent = Math.max(0, Math.min(100, (netDebt / TDEE) * 100));
     document.getElementById('stat-debt').innerText = netDebt;
     document.getElementById('debt-bar-fill').style.width = `${debtPercent}%`;
     
-    // Gold generation: If netDebt is negative, that means we are in a surplus deficit!
-    // We can convert those excess burned calories into Gold in real-time or at day end.
-    // Let's allow converting them in real-time if they want, or just update the active Gold.
     if (netDebt < 0) {
-      const surplus = Math.abs(netDebt);
-      // Display negative debt as 0 in the main bar, but show surplus in Gold
       document.getElementById('stat-debt').innerText = 0;
       document.getElementById('debt-bar-fill').style.width = '0%';
     }
@@ -214,7 +260,7 @@ function updateCalorieLedger() {
 }
 
 // --- Navigation ---
-function switchTab(tabId) {
+window.switchTab = function(tabId) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.remove('active');
   });
@@ -224,10 +270,10 @@ function switchTab(tabId) {
 
   document.getElementById(`tab-${tabId}`).classList.add('active');
   document.getElementById(`nav-${tabId}`).classList.add('active');
-}
+};
 
 // --- Attribute Allocation ---
-function allocatePoint(attr) {
+window.allocatePoint = function(attr) {
   if (state.statPoints > 0) {
     state.attributes[attr]++;
     state.statPoints--;
@@ -237,53 +283,69 @@ function allocatePoint(attr) {
   } else {
     alert("[SYSTEM] You do not have enough Stat Points. Complete Daily Quests or Level Up to earn more.");
   }
-}
+};
 
 // --- Quest Loggers ---
-function logWorkout(minutes) {
+window.logWorkout = function(minutes) {
   state.quests.workout = Math.min(120, state.quests.workout + minutes);
-  
-  // Award Gold for workouts
   state.gold += minutes * 2; 
-  
   saveState();
   updateUI();
   playSystemSound();
-}
+};
 
-function logWater(liters) {
+// Also expose a function to directly update weight for testing
+window.updateWeight = function(newWeight) {
+  if (newWeight >= 75.0 && newWeight <= 105.0) {
+    state.hp = newWeight;
+    
+    // Level is calculated: Level 1 at 105kg, Level 30 at 75kg
+    // Level = 1 + (105 - weight)
+    const newLvl = Math.floor(1 + (105.0 - newWeight));
+    if (newLvl > state.level) {
+      state.level = newLvl;
+      state.statPoints += (newLvl - state.level) * 5;
+      // Upgrade title based on weight
+      if (newWeight <= 75.0) state.title = "S-RANK MONARCH";
+      else if (newWeight <= 78.0) state.title = "A-RANK HUNTER";
+      else if (newWeight <= 82.0) state.title = "B-RANK HUNTER";
+      else if (newWeight <= 88.0) state.title = "C-RANK HUNTER";
+      else if (newWeight <= 95.0) state.title = "D-RANK HUNTER";
+      alert(`[SYSTEM] LEVEL UP! You have reached Level ${state.level}. +5 Stat Points awarded.`);
+    }
+    saveState();
+    updateUI();
+    playSystemSound();
+  }
+};
+
+window.logWater = function(liters) {
   state.quests.water = Math.min(5.0, state.quests.water + liters);
   saveState();
   updateUI();
   playSystemSound();
-}
+};
 
 // --- Step Tracking (Sensors & Simulation) ---
 function toggleLiveWalk() {
   const btn = document.getElementById('btn-sim-toggle');
   if (isWalking) {
-    // Stop walk
     clearInterval(walkInterval);
     isWalking = false;
     btn.innerText = 'Start Live Walk';
     btn.classList.remove('btn-secondary');
     btn.classList.add('btn-primary');
   } else {
-    // Start walk
     isWalking = true;
     btn.innerText = 'Stop Walk';
     btn.classList.remove('btn-primary');
     btn.classList.add('btn-secondary');
     
     walkInterval = setInterval(() => {
-      // Simulate 2 steps per second (120 steps/min)
       state.quests.steps += 2;
-      
-      // Every 500 steps, let's award some Gold
       if (state.quests.steps % 500 === 0) {
         state.gold += 10;
       }
-      
       saveState();
       updateUI();
     }, 1000);
@@ -299,8 +361,7 @@ function togglePhoneSensors() {
     btn.classList.remove('btn-primary');
     btn.classList.add('btn-secondary');
   } else {
-    // Request permission on iOS if needed, otherwise just listen
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
       DeviceMotionEvent.requestPermission()
         .then(permissionState => {
           if (permissionState === 'granted') {
@@ -334,17 +395,13 @@ function handleDeviceMotion(event) {
   
   const magnitude = Math.sqrt(x*x + y*y + z*z);
   
-  // Simple step threshold: peak acceleration > 12.5 m/s^2 (gravity is ~9.8)
   if (magnitude > 12.5) {
     const now = Date.now();
-    if (now - lastStepTime > 320) { // 320ms debounce (max ~3 steps per second)
+    if (now - lastStepTime > 320) {
       state.quests.steps++;
-      
-      // Award 1 Gold per 50 steps walked actively
       if (state.quests.steps % 50 === 0) {
         state.gold += 1;
       }
-      
       lastStepTime = now;
       saveState();
       updateUI();
@@ -353,7 +410,7 @@ function handleDeviceMotion(event) {
 }
 
 // --- Food Registration ---
-function registerFood(event) {
+window.registerFood = function(event) {
   event.preventDefault();
   const nameInput = document.getElementById('food-name');
   const calInput = document.getElementById('food-calories');
@@ -371,19 +428,17 @@ function registerFood(event) {
   updateUI();
   playSystemSound();
   
-  // Add message to chat log
   appendMessage('system', `[SYSTEM] Meal Registered: ${name} (+${calories} kcal). Your calorie debt has increased.`);
-}
+};
 
 // --- Shop Purchases ---
-function buyItem(itemType, cost) {
+window.buyItem = function(itemType, cost) {
   if (state.gold >= cost) {
     state.gold -= cost;
     
     if (itemType === 'lasagna') {
       appendMessage('system', `[SYSTEM] Item [Elixir of Lasagna] purchased successfully. Your calorie balance is reduced by 800 Gold. You are permitted to consume 1 serving of Lasagna.`);
     } else if (itemType === 'allowance') {
-      // Increase daily allowance (reduces calorie debt by 200)
       state.foodIntake -= 200;
       appendMessage('system', `[SYSTEM] Item [Low-Carb Boost Potion] consumed. Calorie debt reduced by 200 kcal.`);
     } else if (itemType === 'reset') {
@@ -398,26 +453,21 @@ function buyItem(itemType, cost) {
   } else {
     alert(`[SYSTEM] Insufficient Gold. You need ${cost - state.gold} more Gold to purchase this item.`);
   }
-}
+};
 
 // --- AI Chat / System Guide ---
-async function sendMessage(event) {
+window.sendMessage = async function(event) {
   event.preventDefault();
   const input = document.getElementById('chat-input');
   const message = input.value.trim();
   if (!message) return;
   
-  // Clear input
   input.value = '';
-  
-  // Append user message
   appendMessage('user', message);
   
-  // Show typing indicator
   const typingId = appendMessage('system', `[SYSTEM] Connecting to the Shadow Monarch Agent...`);
   
   try {
-    // Send request to the local Python Antigravity backend
     const response = await fetch('http://localhost:5000/chat', {
       method: 'POST',
       headers: {
@@ -437,7 +487,6 @@ async function sendMessage(event) {
       })
     });
     
-    // Remove typing indicator
     document.getElementById(typingId).remove();
     
     if (response.ok) {
@@ -447,15 +496,12 @@ async function sendMessage(event) {
       throw new Error("Backend server error");
     }
   } catch (error) {
-    // Remove typing indicator
     if (document.getElementById(typingId)) {
       document.getElementById(typingId).remove();
     }
-    
-    // Fallback to local simulated System Guide responses if Python server is not running
     simulateLocalResponse(message);
   }
-}
+};
 
 function appendMessage(sender, text) {
   const chatMessages = document.getElementById('chat-messages');
@@ -481,16 +527,16 @@ function simulateLocalResponse(message) {
   
   if (msgLower.includes('lasagna')) {
     if (state.gold >= 800) {
-      reply += `Hunter, your current Calorie Gold balance is ${state.gold}. You have enough Gold to purchase the [Elixir of Lasagna]. Go to the Inventory tab to execute the purchase.`;
+      reply += `Hunter asheejajayan, your current Calorie Gold balance is ${state.gold}. You have enough Gold to purchase the [Elixir of Lasagna]. Go to the Inventory tab to execute the purchase.`;
     } else {
       reply += `Access Denied. Lasagna requires 800 Gold. Your current balance is ${state.gold}. You need ${800 - state.gold} more Gold. Suggestion: Walk ${Math.ceil((800 - state.gold) / CALORIES_PER_STEP)} more steps to clear this requirement.`;
     }
   } else if (msgLower.includes('status') || msgLower.includes('level')) {
-    reply += `PLAYER STATUS EVALUATION:\n- Level: ${state.level}\n- Title: ${state.title}\n- Weight (HP): ${state.hp.toFixed(1)} kg\n- Current Gold: ${state.gold}\nKeep pushing, Hunter. The path to S-Rank is clear.`;
+    reply += `PLAYER STATUS EVALUATION:\n- Level: ${state.level}\n- Title: ${state.title}\n- Weight (HP): ${state.hp.toFixed(1)} kg\n- Current Gold: ${state.gold}\nKeep pushing, Hunter asheejajayan. The path to S-Rank is clear.`;
   } else if (msgLower.includes('hungry') || msgLower.includes('eat')) {
-    reply += `[DIETARY RECOMMENDATION] Hunter, you are currently in a calorie debt of ${getNetCalorieDebt()} kcal. Consume 100g of extra lean ground chicken (110 kcal, 23g protein) and unlimited broccoli to trigger satiety receptors without increasing your debt significantly.`;
+    reply += `[DIETARY RECOMMENDATION] Hunter asheejajayan, you are currently in a calorie debt of ${getNetCalorieDebt()} kcal. Consume 100g of extra lean ground chicken (110 kcal, 23g protein) and unlimited broccoli to trigger satiety receptors without increasing your debt significantly.`;
   } else {
-    reply += `Message received, Hunter. I am monitoring your agility (${state.quests.steps} steps) and vitality (${state.quests.water.toFixed(1)}L water). Continue your daily quest to limit break.`;
+    reply += `Message received, Hunter asheejajayan. I am monitoring your agility (${state.quests.steps} steps) and vitality (${state.quests.water.toFixed(1)}L water). Continue your daily quest to limit break.`;
   }
   
   setTimeout(() => {
@@ -501,13 +547,12 @@ function simulateLocalResponse(message) {
 // --- Audio & Haptics (Simulated) ---
 function playSystemSound() {
   try {
-    // Simple synth beep using Web Audio API (extremely retro-futuristic!)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch beep
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
     
     gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
@@ -518,6 +563,6 @@ function playSystemSound() {
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.1);
   } catch (e) {
-    // Audio context not allowed or failed
+    // Audio context not allowed
   }
 }
