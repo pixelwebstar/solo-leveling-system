@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>THE SYSTEM - Solo Leveling Weight Loss</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app" class="mobile-container">
+    <!-- Header / System Banner -->
+    <header class="system-header">
+      <div class="system-title-container">
+        <span class="system-glow-dot"></span>
+        <h1 class="system-title">THE SYSTEM</h1>
+      </div>
+      <div class="player-level-badge">
+        <span class="lvl-label">LVL</span>
+        <span id="header-level" class="lvl-val">1</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area (Tabs) -->
+    <main class="system-content">
+      
+      <!-- Tab 1: Status (Player Sheet) -->
+      <section id="tab-status" class="tab-panel active">
+        <div class="status-card glass-panel">
+          <div class="status-header">
+            <h2 id="player-title" class="hunter-title">E-RANK HUNTER</h2>
+            <div class="status-sub">Active Player: Hunter</div>
+          </div>
+          
+          <div class="stat-bars">
+            <!-- HP (Weight) Bar -->
+            <div class="bar-container">
+              <div class="bar-labels">
+                <span class="bar-name">HP (Weight)</span>
+                <span class="bar-values"><span id="stat-hp">105.0</span> / 75.0 kg</span>
+              </div>
+              <div class="bar-bg">
+                <div id="hp-bar-fill" class="bar-fill hp-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- Calorie Debt Bar -->
+            <div class="bar-container">
+              <div class="bar-labels">
+                <span class="bar-name">Daily Calorie Debt</span>
+                <span class="bar-values"><span id="stat-debt">2888</span> / 2888 kcal</span>
+              </div>
+              <div class="bar-bg">
+                <div id="debt-bar-fill" class="bar-fill debt-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Currency and Points -->
+          <div class="currency-row">
+            <div class="currency-item">
+              <span class="currency-label">GOLD (Calorie Balance)</span>
+              <span id="stat-gold" class="currency-val">0</span>
+            </div>
+            <div class="currency-item">
+              <span class="currency-label">STAT POINTS</span>
+              <span id="stat-points" class="currency-val text-glow">5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attributes Grid -->
+        <div class="attributes-section glass-panel">
+          <h3>PLAYER ATTRIBUTES</h3>
+          <div class="attributes-grid">
+            <div class="attr-item">
+              <div class="attr-info">
+                <span class="attr-name">STR (Strength)</span>
+                <span id="attr-str" class="attr-val">10</span>
+              </div>
+              <button class="btn-allocate" onclick="allocatePoint('str')">+</button>
+            </div>
+            <div class="attr-item">
+              <div class="attr-info">
+                <span class="attr-name">AGI (Agility)</span>
+                <span id="attr-agi" class="attr-val">10</span>
+              </div>
+              <button class="btn-allocate" onclick="allocatePoint('agi')">+</button>
+            </div>
+            <div class="attr-item">
+              <div class="attr-info">
+                <span class="attr-name">VIT (Vitality)</span>
+                <span id="attr-vit" class="attr-val">10</span>
+              </div>
+              <button class="btn-allocate" onclick="allocatePoint('vit')">+</button>
+            </div>
+            <div class="attr-item">
+              <div class="attr-info">
+                <span class="attr-name">WIL (Willpower)</span>
+                <span id="attr-wil" class="attr-val">10</span>
+              </div>
+              <button class="btn-allocate" onclick="allocatePoint('wil')">+</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 2: Quest (Daily Challenges) -->
+      <section id="tab-quest" class="tab-panel">
+        <div class="quest-alert-card glass-panel">
+          <div class="quest-alert-header">
+            <span class="alert-tag text-glow">DAILY QUEST</span>
+            <h2>PREPARING TO BECOME STRONG</h2>
+          </div>
+          <p class="quest-desc">WARNING: Failure to complete this daily quest will trigger the Penalty Protocol at midnight.</p>
+        </div>
+
+        <!-- Quest List -->
+        <div class="quest-list">
+          <!-- Agility Quest -->
+          <div class="quest-item glass-panel">
+            <div class="quest-checkbox-container">
+              <input type="checkbox" id="q-steps-check" disabled>
+              <label for="q-steps-check" class="quest-title-label">Agility: 20,000 Steps</label>
+            </div>
+            <div class="quest-progress-row">
+              <div class="quest-progress-bar">
+                <div id="q-steps-fill" class="q-fill" style="width: 0%;"></div>
+              </div>
+              <span class="quest-progress-text"><span id="q-steps-val">0</span> / 20,000</span>
+            </div>
+            <!-- Sensor & Simulation Controls -->
+            <div class="quest-controls">
+              <button id="btn-sensor-toggle" class="btn-secondary">Enable Phone Sensors</button>
+              <button id="btn-sim-toggle" class="btn-primary">Start Live Walk</button>
+            </div>
+          </div>
+
+          <!-- Strength Quest -->
+          <div class="quest-item glass-panel">
+            <div class="quest-checkbox-container">
+              <input type="checkbox" id="q-workout-check" disabled>
+              <label for="q-workout-check" class="quest-title-label">Strength: 45 Min Workout</label>
+            </div>
+            <div class="quest-progress-row">
+              <div class="quest-progress-bar">
+                <div id="q-workout-fill" class="q-fill" style="width: 0%;"></div>
+              </div>
+              <span class="quest-progress-text"><span id="q-workout-val">0</span> / 45 min</span>
+            </div>
+            <div class="quest-controls">
+              <button onclick="logWorkout(15)" class="btn-secondary">+15 Min</button>
+              <button onclick="logWorkout(45)" class="btn-primary">Complete Workout</button>
+            </div>
+          </div>
+
+          <!-- Vitality Quest -->
+          <div class="quest-item glass-panel">
+            <div class="quest-checkbox-container">
+              <input type="checkbox" id="q-water-check" disabled>
+              <label for="q-water-check" class="quest-title-label">Vitality: 3.0L Water</label>
+            </div>
+            <div class="quest-progress-row">
+              <div class="quest-progress-bar">
+                <div id="q-water-fill" class="q-fill" style="width: 0%;"></div>
+              </div>
+              <span class="quest-progress-text"><span id="q-water-val">0.0</span> / 3.0 L</span>
+            </div>
+            <div class="quest-controls">
+              <button onclick="logWater(0.25)" class="btn-secondary">+250ml (Cup)</button>
+              <button onclick="logWater(0.5)" class="btn-primary">+500ml (Bottle)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: Inventory / Shop -->
+      <section id="tab-inventory" class="tab-panel">
+        <!-- Calorie Ledger -->
+        <div class="ledger-card glass-panel">
+          <h3>DAILY CALORIE LEDGER</h3>
+          <div class="ledger-grid">
+            <div class="ledger-item">
+              <span class="ledger-label">Initial Debt (TDEE)</span>
+              <span class="ledger-val text-red">+2888 kcal</span>
+            </div>
+            <div class="ledger-item">
+              <span class="ledger-label">Passive Metabolic Burn</span>
+              <span id="ledger-bmr" class="ledger-val text-green">-0 kcal</span>
+            </div>
+            <div class="ledger-item">
+              <span class="ledger-label">Activity Burn (Steps)</span>
+              <span id="ledger-activity" class="ledger-val text-green">-0 kcal</span>
+            </div>
+            <div class="ledger-item">
+              <span class="ledger-label">Food Intake Registered</span>
+              <span id="ledger-intake" class="ledger-val text-red">+0 kcal</span>
+            </div>
+            <hr class="ledger-divider">
+            <div class="ledger-item total-row">
+              <span class="ledger-label">NET DEBT</span>
+              <span id="ledger-net" class="ledger-val text-glow">2888 kcal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food Registration -->
+        <div class="food-register-card glass-panel">
+          <h3>REGISTER FOOD CONSUMPTION</h3>
+          <form id="food-form" onsubmit="registerFood(event)">
+            <div class="form-group">
+              <input type="text" id="food-name" placeholder="E.g., Ground Chicken, Salad" required autocomplete="off">
+              <input type="number" id="food-calories" placeholder="Calories (kcal)" required min="1">
+            </div>
+            <button type="submit" class="btn-primary btn-full">Register Meal</button>
+          </form>
+        </div>
+
+        <!-- The Shop -->
+        <div class="shop-section glass-panel">
+          <h3>SYSTEM SHOP (EXCHANGE GOLD)</h3>
+          <div class="shop-grid">
+            <div class="shop-item">
+              <div class="shop-item-info">
+                <span class="item-name">Elixir of Lasagna</span>
+                <span class="item-desc">Unlocks 1 serving of Lasagna.</span>
+              </div>
+              <button onclick="buyItem('lasagna', 800)" class="btn-shop">800 GOLD</button>
+            </div>
+            <div class="shop-item">
+              <div class="shop-item-info">
+                <span class="item-name">Low-Carb Boost Potion</span>
+                <span class="item-desc">+200 kcal allowance for the day.</span>
+              </div>
+              <button onclick="buyItem('allowance', 400)" class="btn-shop">400 GOLD</button>
+            </div>
+            <div class="shop-item">
+              <div class="shop-item-info">
+                <span class="item-name">Shadow Recovery Crystal</span>
+                <span class="item-desc">Resets daily water or workout target.</span>
+              </div>
+              <button onclick="buyItem('reset', 300)" class="btn-shop">300 GOLD</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 4: System Guide (AI Chat) -->
+      <section id="tab-guide" class="tab-panel">
+        <div class="chat-container glass-panel">
+          <div class="chat-header">
+            <div class="guide-avatar">
+              <span class="system-glow-dot active"></span>
+            </div>
+            <div class="guide-info">
+              <span class="guide-name">SYSTEM GUIDE</span>
+              <span class="guide-status">ONLINE</span>
+            </div>
+          </div>
+
+          <div id="chat-messages" class="chat-messages">
+            <div class="message system">
+              <div class="message-content">
+                [SYSTEM] Welcome back, Hunter. I am the System Guide. I am monitoring your vital signs, steps, and calorie debt. Speak your request.
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-input-area">
+            <form id="chat-form" onsubmit="sendMessage(event)">
+              <input type="text" id="chat-input" placeholder="Ask the System Guide..." autocomplete="off">
+              <button type="submit" class="btn-send">
+                <svg viewBox="0 0 24 24" class="send-icon">
+                  <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="system-nav">
+      <button onclick="switchTab('status')" class="nav-item active" id="nav-status">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">STATUS</span>
+      </button>
+      <button onclick="switchTab('quest')" class="nav-item" id="nav-quest">
+        <span class="nav-icon">⚔️</span>
+        <span class="nav-label">QUEST</span>
+      </button>
+      <button onclick="switchTab('inventory')" class="nav-item" id="nav-inventory">
+        <span class="nav-icon">🎒</span>
+        <span class="nav-label">INVENTORY</span>
+      </button>
+      <button onclick="switchTab('guide')" class="nav-item" id="nav-guide">
+        <span class="nav-icon">👁️</span>
+        <span class="nav-label">GUIDE</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
